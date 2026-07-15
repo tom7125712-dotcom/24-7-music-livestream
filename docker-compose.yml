@@ -1,0 +1,8 @@
+services:
+  livestream:
+    build: .
+    env_file:
+      - .env
+    restart: unless-stopped
+    stop_grace_period: 30s
+

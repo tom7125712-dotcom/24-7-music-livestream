@@ -1,0 +1,66 @@
+name: 24/7 Music Livestream
+
+on:
+  workflow_dispatch:
+    inputs:
+      stream_minutes:
+        description: Minutes to stream before this run exits
+        required: true
+        default: "350"
+        type: string
+  schedule:
+    - cron: "0 0,5,10,15,20 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: music-livestream
+  cancel-in-progress: true
+
+jobs:
+  livestream:
+    name: Stream to RTMP
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      RTMP_URL: ${{ secrets.RTMP_URL }}
+      STREAM_KEY: ${{ secrets.STREAM_KEY }}
+      FULL_RTMP_URL: ${{ secrets.FULL_RTMP_URL }}
+      IMAGE_FILE: assets/background.png
+      AUDIO_FILE: assets/music.mp3
+      WIDTH: 1920
+      HEIGHT: 1080
+      FPS: 30
+      VIDEO_BITRATE: 3500k
+      AUDIO_BITRATE: 192k
+      STREAM_MINUTES: ${{ inputs.stream_minutes || '350' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Validate stream settings
+        run: |
+          if [ -z "$FULL_RTMP_URL" ] && { [ -z "$RTMP_URL" ] || [ -z "$STREAM_KEY" ]; }; then
+            echo "Set either FULL_RTMP_URL or both RTMP_URL and STREAM_KEY as repository secrets." >&2
+            exit 2
+          fi
+          test -f "$IMAGE_FILE"
+          test -f "$AUDIO_FILE"
+
+      - name: Start livestream
+        run: |
+          case "$STREAM_MINUTES" in
+            ''|*[!0-9]*)
+              echo "stream_minutes must be a positive integer." >&2
+              exit 2
+              ;;
+          esac
+          DURATION_SECONDS=$((STREAM_MINUTES * 60))
+          export DURATION_SECONDS
+          sh scripts/start-live.sh
