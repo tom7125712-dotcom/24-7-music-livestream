@@ -10,6 +10,7 @@ This project includes a GitHub Actions workflow for scheduled livestreaming.
 - `assets/music.mp3` - the looping music track.
 - `scripts/start-live.sh` - starts one FFmpeg livestream session.
 - `scripts/run-forever.sh` - restarts the stream if FFmpeg exits.
+- `scripts/run-github-actions.sh` - reconnects FFmpeg inside one GitHub Actions run.
 - `.github/workflows/livestream.yml` - runs the livestream from GitHub Actions.
 - `.env.example` - copy this to `.env` and add your stream settings.
 - `docker-compose.yml` - recommended 24/7 runner.
@@ -39,7 +40,7 @@ GitHub-hosted Actions jobs are time-limited, so the workflow streams in segments
 
 4. Open `Actions` -> `24/7 Music Livestream` -> `Run workflow`.
 
-5. The schedule runs at `00:00`, `05:00`, `10:00`, `15:00`, and `20:00` UTC. Each run streams up to 350 minutes, and the next run cancels the previous one to keep only one active stream.
+5. The schedule runs at `00:00`, `05:00`, `10:00`, `15:00`, and `20:00` UTC. Each run streams up to 350 minutes, reconnects if FFmpeg exits early, and the next run cancels the previous one to keep only one active stream.
 
 ## Local Quick Start
 

@@ -35,6 +35,7 @@ jobs:
       VIDEO_BITRATE: 3500k
       AUDIO_BITRATE: 192k
       STREAM_MINUTES: ${{ inputs.stream_minutes || '350' }}
+      RESTART_DELAY: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -54,13 +55,4 @@ jobs:
           test -f "$AUDIO_FILE"
 
       - name: Start livestream
-        run: |
-          case "$STREAM_MINUTES" in
-            ''|*[!0-9]*)
-              echo "stream_minutes must be a positive integer." >&2
-              exit 2
-              ;;
-          esac
-          DURATION_SECONDS=$((STREAM_MINUTES * 60))
-          export DURATION_SECONDS
-          sh scripts/start-live.sh
+        run: sh scripts/run-github-actions.sh
