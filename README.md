@@ -40,7 +40,7 @@ GitHub-hosted Actions jobs are time-limited, so the workflow streams in segments
 
 4. Open `Actions` -> `24/7 Music Livestream` -> `Run workflow`.
 
-5. The schedule runs at `00:00`, `05:00`, `10:00`, `15:00`, and `20:00` UTC. Each run streams up to 350 minutes, reconnects if FFmpeg exits early, and the next run cancels the previous one to keep only one active stream.
+5. The schedule runs at `00:00`, `06:00`, `12:00`, and `18:00` UTC. Each run streams up to 350 minutes, reconnects if FFmpeg exits early, and waits for the previous run instead of canceling it.
 
 ## Local Quick Start
 
