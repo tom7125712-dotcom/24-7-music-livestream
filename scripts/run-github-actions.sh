@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-STREAM_MINUTES="${STREAM_MINUTES:-350}"
+STREAM_MINUTES="${STREAM_MINUTES:-340}"
 RESTART_DELAY="${RESTART_DELAY:-15}"
 MIN_REMAINING_SECONDS="${MIN_REMAINING_SECONDS:-30}"
 
@@ -47,4 +47,3 @@ while :; do
   echo "FFmpeg exited with status $STATUS. Reconnecting in ${RESTART_DELAY}s..." >&2
   sleep "$RESTART_DELAY"
 done
-
