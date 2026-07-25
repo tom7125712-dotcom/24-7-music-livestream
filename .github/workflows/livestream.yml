@@ -1,28 +1,26 @@
-name: 24/7 Music Livestream
+name: Manual Livestream Smoke Test
 
 on:
   workflow_dispatch:
     inputs:
       stream_minutes:
-        description: Minutes to stream before this run exits
+        description: Minutes to test the stream before this run exits
         required: true
-        default: "340"
+        default: "30"
         type: string
-  schedule:
-    - cron: "17,47 * * * *"
 
 permissions:
   contents: read
 
 concurrency:
-  group: music-livestream
-  cancel-in-progress: false
+  group: music-livestream-smoke-test
+  cancel-in-progress: true
 
 jobs:
   livestream:
-    name: Stream to RTMP
+    name: Test RTMP stream
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 45
     env:
       RTMP_URL: ${{ secrets.RTMP_URL }}
       STREAM_KEY: ${{ secrets.STREAM_KEY }}
@@ -34,7 +32,7 @@ jobs:
       FPS: 30
       VIDEO_BITRATE: 3500k
       AUDIO_BITRATE: 192k
-      STREAM_MINUTES: ${{ inputs.stream_minutes || '340' }}
+      STREAM_MINUTES: ${{ inputs.stream_minutes || '30' }}
       RESTART_DELAY: 15
     steps:
       - name: Check out repository
