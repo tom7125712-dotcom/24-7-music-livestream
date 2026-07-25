@@ -1,0 +1,79 @@
+name: Deploy 24/7 Livestream Service
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: music-livestream-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Install or restart service
+    runs-on: self-hosted
+    timeout-minutes: 30
+    env:
+      RTMP_URL: ${{ secrets.RTMP_URL }}
+      STREAM_KEY: ${{ secrets.STREAM_KEY }}
+      FULL_RTMP_URL: ${{ secrets.FULL_RTMP_URL }}
+      IMAGE_FILE: assets/background.png
+      AUDIO_FILE: assets/music.mp3
+      WIDTH: 1920
+      HEIGHT: 1080
+      FPS: 30
+      VIDEO_BITRATE: 3500k
+      AUDIO_BITRATE: 192k
+      RESTART_DELAY: 10
+      SERVICE_NAME: music-livestream
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install FFmpeg if needed
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -version | head -n 1
+            exit 0
+          fi
+
+          if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          elif command -v apk >/dev/null 2>&1; then
+            sudo apk add --no-cache ffmpeg
+          else
+            echo "Install FFmpeg on the self-hosted runner, then run this workflow again." >&2
+            exit 2
+          fi
+
+      - name: Validate stream settings
+        run: |
+          if [ -z "$FULL_RTMP_URL" ] && { [ -z "$RTMP_URL" ] || [ -z "$STREAM_KEY" ]; }; then
+            echo "Set either FULL_RTMP_URL or both RTMP_URL and STREAM_KEY as repository secrets." >&2
+            exit 2
+          fi
+          test -f "$IMAGE_FILE"
+          test -f "$AUDIO_FILE"
+
+      - name: Write runtime environment
+        run: |
+          umask 077
+          {
+            printf 'RTMP_URL=%s\n' "$RTMP_URL"
+            printf 'STREAM_KEY=%s\n' "$STREAM_KEY"
+            printf 'FULL_RTMP_URL=%s\n' "$FULL_RTMP_URL"
+            printf 'IMAGE_FILE=%s\n' "$IMAGE_FILE"
+            printf 'AUDIO_FILE=%s\n' "$AUDIO_FILE"
+            printf 'WIDTH=%s\n' "$WIDTH"
+            printf 'HEIGHT=%s\n' "$HEIGHT"
+            printf 'FPS=%s\n' "$FPS"
+            printf 'VIDEO_BITRATE=%s\n' "$VIDEO_BITRATE"
+            printf 'AUDIO_BITRATE=%s\n' "$AUDIO_BITRATE"
+            printf 'RESTART_DELAY=%s\n' "$RESTART_DELAY"
+          } > .env
+
+      - name: Install or restart livestream service
+        run: sh scripts/install-systemd-user-service.sh
