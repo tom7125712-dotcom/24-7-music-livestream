@@ -2,7 +2,7 @@
 
 Use one still image and one looping MP3 to run a 24-hour music livestream through any RTMP destination, such as YouTube Live, Twitch, Facebook Live, or a private RTMP server.
 
-This project includes a short GitHub Actions smoke test and a self-hosted service deploy workflow.
+This project includes a segmented GitHub Actions livestream workflow and a self-hosted service deploy workflow.
 
 ## Project Files
 
@@ -12,14 +12,16 @@ This project includes a short GitHub Actions smoke test and a self-hosted servic
 - `scripts/run-forever.sh` - restarts the stream if FFmpeg exits.
 - `scripts/run-github-actions.sh` - reconnects FFmpeg inside one short GitHub Actions test run.
 - `scripts/install-systemd-user-service.sh` - installs the stream as a restartable Linux user service.
-- `.github/workflows/livestream.yml` - manually tests the stream for a short window.
+- `.github/workflows/livestream.yml` - runs segmented GitHub Actions livestream sessions.
 - `.github/workflows/deploy-self-hosted.yml` - installs or restarts the 24/7 service on a self-hosted runner.
 - `.env.example` - copy this to `.env` and add your stream settings.
 - `docker-compose.yml` - recommended 24/7 runner.
 
-## GitHub Actions Smoke Test
+## GitHub Actions Segmented Livestream
 
-GitHub-hosted Actions jobs are not reliable for 24/7 livestreaming. Use this workflow only for a short test that verifies the image, audio, FFmpeg command, and RTMP secrets.
+GitHub-hosted Actions jobs have a 6-hour limit, so this workflow streams in repeated segments. It schedules a new run every hour, keeps only one active stream at a time, and lets the next queued run start after the current segment exits.
+
+This is the closest GitHub-only free setup, but it is not a true guaranteed 24/7 server. YouTube may see a short disconnect between segments, and GitHub can delay or cancel scheduled jobs.
 
 1. Push this repository to GitHub.
 
@@ -40,9 +42,11 @@ GitHub-hosted Actions jobs are not reliable for 24/7 livestreaming. Use this wor
    FULL_RTMP_URL=rtmp://example.com/app/your-stream-key
    ```
 
-4. Open `Actions` -> `Manual Livestream Smoke Test` -> `Run workflow`.
+4. Open `Actions` -> `Segmented GitHub Actions Livestream`.
 
-5. Keep the default `30` minutes unless you only need a shorter test.
+5. To start immediately, click `Run workflow` and keep the default `335` minutes.
+
+6. After that, the hourly schedule keeps a queued run ready. Do not repeatedly click `Re-run jobs`, because that can create extra queued runs and confusing cancelled entries.
 
 ## 24/7 Self-hosted Service
 
@@ -123,7 +127,7 @@ You can lower `VIDEO_BITRATE` to `2500k` if your upload bandwidth is limited.
 ## Notes For 24/7 Streaming
 
 - Run this on a VPS or always-on computer, not GitHub Actions. GitHub Actions is not designed for continuous 24-hour livestreaming.
-- The GitHub-hosted smoke test is intentionally manual-only, so it will not create overlapping scheduled runs.
+- The GitHub Actions segmented workflow avoids killing the active stream, but it can still have short gaps because GitHub-hosted runners are temporary.
 - Keep your `.env` file private. Never commit your stream key.
 - For YouTube, create the livestream in YouTube Studio first, then copy the RTMP URL and stream key into `.env`.
 - If the RTMP connection drops, `scripts/run-forever.sh` waits and starts it again.

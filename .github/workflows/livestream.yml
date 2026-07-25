@@ -1,26 +1,28 @@
-name: Manual Livestream Smoke Test
+name: Segmented GitHub Actions Livestream
 
 on:
   workflow_dispatch:
     inputs:
       stream_minutes:
-        description: Minutes to test the stream before this run exits
+        description: Minutes to stream in this segment. Values above 335 are clamped.
         required: true
-        default: "30"
+        default: "335"
         type: string
+  schedule:
+    - cron: "0 * * * *"
 
 permissions:
   contents: read
 
 concurrency:
-  group: music-livestream-smoke-test
-  cancel-in-progress: true
+  group: music-livestream
+  cancel-in-progress: false
 
 jobs:
   livestream:
-    name: Test RTMP stream
+    name: Stream RTMP segment
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 345
     env:
       RTMP_URL: ${{ secrets.RTMP_URL }}
       STREAM_KEY: ${{ secrets.STREAM_KEY }}
@@ -32,8 +34,9 @@ jobs:
       FPS: 30
       VIDEO_BITRATE: 3500k
       AUDIO_BITRATE: 192k
-      STREAM_MINUTES: ${{ inputs.stream_minutes || '30' }}
+      STREAM_MINUTES: ${{ inputs.stream_minutes || '335' }}
       RESTART_DELAY: 15
+      MIN_REMAINING_SECONDS: 45
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -52,5 +55,21 @@ jobs:
           test -f "$IMAGE_FILE"
           test -f "$AUDIO_FILE"
 
-      - name: Start livestream
-        run: sh scripts/run-github-actions.sh
+      - name: Start livestream segment
+        run: |
+          case "$STREAM_MINUTES" in
+            ''|*[!0-9]*)
+              echo "stream_minutes must be a positive integer." >&2
+              exit 2
+              ;;
+          esac
+          if [ "$STREAM_MINUTES" -le 0 ]; then
+            echo "stream_minutes must be greater than zero." >&2
+            exit 2
+          fi
+          if [ "$STREAM_MINUTES" -gt 335 ]; then
+            echo "GitHub-hosted jobs have a 6-hour limit; clamping stream_minutes to 335."
+            STREAM_MINUTES=335
+          fi
+          export STREAM_MINUTES
+          sh scripts/run-github-actions.sh
