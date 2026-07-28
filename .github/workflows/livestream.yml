@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       stream_minutes:
-        description: Minutes to stream in this segment. Values above 335 are clamped.
+        description: Minutes to stream in this segment. Values above 295 are clamped.
         required: true
-        default: "335"
+        default: "295"
         type: string
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 */5 * * *"
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
   livestream:
     name: Stream RTMP segment
     runs-on: ubuntu-latest
-    timeout-minutes: 345
+    timeout-minutes: 310
     env:
       RTMP_URL: ${{ secrets.RTMP_URL }}
       STREAM_KEY: ${{ secrets.STREAM_KEY }}
@@ -34,7 +34,7 @@ jobs:
       FPS: 30
       VIDEO_BITRATE: 3500k
       AUDIO_BITRATE: 192k
-      STREAM_MINUTES: ${{ inputs.stream_minutes || '335' }}
+      STREAM_MINUTES: ${{ inputs.stream_minutes || '295' }}
       RESTART_DELAY: 15
       MIN_REMAINING_SECONDS: 45
     steps:
@@ -67,9 +67,9 @@ jobs:
             echo "stream_minutes must be greater than zero." >&2
             exit 2
           fi
-          if [ "$STREAM_MINUTES" -gt 335 ]; then
-            echo "GitHub-hosted jobs have a 6-hour limit; clamping stream_minutes to 335."
-            STREAM_MINUTES=335
+          if [ "$STREAM_MINUTES" -gt 295 ]; then
+            echo "GitHub-hosted jobs are temporary; clamping stream_minutes to 295 to reduce queued run churn."
+            STREAM_MINUTES=295
           fi
           export STREAM_MINUTES
           sh scripts/run-github-actions.sh

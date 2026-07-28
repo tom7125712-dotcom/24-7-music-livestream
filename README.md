@@ -19,7 +19,7 @@ This project includes a segmented GitHub Actions livestream workflow and a self-
 
 ## GitHub Actions Segmented Livestream
 
-GitHub-hosted Actions jobs have a 6-hour limit, so this workflow streams in repeated segments. It schedules a new run every hour, keeps only one active stream at a time, and lets the next queued run start after the current segment exits.
+GitHub-hosted Actions jobs have a 6-hour limit, so this workflow streams in repeated segments. It schedules a new run every 5 hours, keeps only one active stream at a time, and avoids building up lots of waiting runs that GitHub may cancel.
 
 This is the closest GitHub-only free setup, but it is not a true guaranteed 24/7 server. YouTube may see a short disconnect between segments, and GitHub can delay or cancel scheduled jobs.
 
@@ -44,9 +44,9 @@ This is the closest GitHub-only free setup, but it is not a true guaranteed 24/7
 
 4. Open `Actions` -> `Segmented GitHub Actions Livestream`.
 
-5. To start immediately, click `Run workflow` and keep the default `335` minutes.
+5. To start immediately, click `Run workflow` and keep the default `295` minutes.
 
-6. After that, the hourly schedule keeps a queued run ready. Do not repeatedly click `Re-run jobs`, because that can create extra queued runs and confusing cancelled entries.
+6. After that, the 5-hour schedule starts the next segment near the end of the current one. Do not repeatedly click `Re-run jobs`, because that can create extra queued runs and confusing cancelled entries.
 
 ## 24/7 Self-hosted Service
 
